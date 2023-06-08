@@ -36,51 +36,47 @@ class Jet_Engine_Calculated_Callback_Addon {
 	public function __construct() {
 		add_filter( 'jet-engine/listings/allowed-callbacks', array( $this, 'add_calc_callback' ), 10, 2 );
 		add_filter( 'jet-engine/listing/dynamic-field/callback-args', array( $this, 'add_field_to_args' ), 10, 3 );
-		add_action( 'jet-engine/listing/dynamic-field/callback-controls', array( $this, 'callback_controls' ) );
+		add_filter( 'jet-engine/listings/allowed-callbacks-args', array( $this, 'callback_controls' ) );
 	}
 
-	public function callback_controls( $widget ) {
+	public function callback_controls( $args = array() ) {
 
 		$config = $this->get_config();
 
 		if ( empty( $config ) ) {
-			return;
+			return $args;
 		}
 
 		$config  = array_keys( $config );
 		$options = array_combine( $config, $config );
+		$options = array_merge( array( '' => esc_html__( 'Select ...', 'jet-engine' ) ), $options );
 
-		$widget->add_control(
-			'jet_calc_cbs',
-			array(
-				'label'       => esc_html__( 'Calculated callbacks', 'jet-engine' ),
-				'type'        => \Elementor\Controls_Manager::SELECT,
-				'label_block' => true,
-				'description' => esc_html__( 'Select calculated callback to apply', 'jet-engine' ),
-				'default'     => '',
-				'options'     => $options,
-				'condition'   => array(
-					'dynamic_field_filter' => 'yes',
-					'filter_callback'      => array( 'jet_engine_calculated_field' ),
-				),
-			)
+		$args['jet_calc_cbs'] = array(
+			'label'       => esc_html__( 'Calculated callbacks', 'jet-engine' ),
+			'type'        => 'select',
+			'label_block' => true,
+			'description' => esc_html__( 'Select calculated callback to apply', 'jet-engine' ),
+			'default'     => '',
+			'options'     => $options,
+			'condition'   => array(
+				'dynamic_field_filter' => 'yes',
+				'filter_callback'      => array( 'jet_engine_calculated_field' ),
+			),
 		);
 
-		$widget->add_control(
-			'jet_calc_cb_args',
-			array(
-				'label'       => esc_html__( 'Additional arguments', 'jet-engine' ),
-				'type'        => \Elementor\Controls_Manager::TEXT,
-				'label_block' => true,
-				'description' => esc_html__( 'Pass any addtional arguments for calculated callback. For example increase/dercrease percentage, additional meta field key for default callbacks. Note: for sum_fields, multiply_fields and fields_diff callbacks you can pass multiple additional fields by separating fields name with comma - field_1, field_2, field_3', 'jet-engine' ),
-				'default'     => '',
-				'condition'   => array(
-					'dynamic_field_filter' => 'yes',
-					'filter_callback'      => array( 'jet_engine_calculated_field' ),
-				),
-			)
+		$args['jet_calc_cb_args'] = array(
+			'label'       => esc_html__( 'Additional arguments', 'jet-engine' ),
+			'type'        => 'text',
+			'label_block' => true,
+			'description' => esc_html__( 'Pass any additional arguments for calculated callback. For example increase/dercrease percentage, additional meta field key for default callbacks. Note: for sum_fields, multiply_fields and fields_diff callbacks you can pass multiple additional fields by separating fields name with comma - field_1, field_2, field_3', 'jet-engine' ),
+			'default'     => '',
+			'condition'   => array(
+				'dynamic_field_filter' => 'yes',
+				'filter_callback'      => array( 'jet_engine_calculated_field' ),
+			),
 		);
 
+		return $args;
 	}
 
 	public function add_calc_callback( $callbacks ) {
