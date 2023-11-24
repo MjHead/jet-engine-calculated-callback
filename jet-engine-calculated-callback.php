@@ -300,7 +300,7 @@ function jet_engine_calculated_field( $field_value = null, $calc_key = null, $ar
 
 	if ( is_numeric( $result ) ) {
 
-		$result = number_format ( $result, $dec, $dec_sep, $th_sep );
+		$result = number_format( $result, $dec, $dec_sep, $th_sep );
 
 	}
 
