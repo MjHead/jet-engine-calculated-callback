@@ -76,6 +76,43 @@ class Jet_Engine_Calculated_Callback_Addon {
 			),
 		);
 
+		$args['jet_calc_cb_dec'] = array(
+			'label'       => esc_html__( 'Decimal points', 'jet-engine' ),
+			'type'        => 'number',
+			'min'         => '0',
+			'max'         => '99',
+			'step'        => '1',
+			'default'     => '0',
+			'label_block' => true,
+			'condition'   => array(
+				'dynamic_field_filter' => 'yes',
+				'filter_callback'      => array( 'jet_engine_calculated_field' ),
+			),
+		);
+
+		$args['jet_calc_cb_dec_sep'] = array(
+			'label'       => esc_html__( 'Decimal point', 'jet-engine' ),
+			'type'        => 'text',
+			'label_block' => true,
+			'default'     => '.',
+			'condition'   => array(
+				'dynamic_field_filter' => 'yes',
+				'filter_callback'      => array( 'jet_engine_calculated_field' ),
+			),
+		);
+
+		$args['jet_calc_cb_th_sep'] = array(
+			'label'       => esc_html__( 'Thousands separator', 'jet-engine' ),
+			'type'        => 'text',
+			'label_block' => true,
+			'default'     => ',',
+			'condition'   => array(
+				'dynamic_field_filter' => 'yes',
+				'filter_callback'      => array( 'jet_engine_calculated_field' ),
+			),
+		);
+
+
 		return $args;
 	}
 
@@ -126,11 +163,11 @@ class Jet_Engine_Calculated_Callback_Addon {
 					return 'Please set additional fields names to calculate';
 				}
 
-				$res    = absint( $field_value );
+				$res    = Jet_Engine_Calculated_Callback_Addon::prepare_value( $field_value );
 				$fields = explode( ',', str_replace( ' ', '', $fields ) );
 
 				foreach ( $fields as $field ) {
-					$res += absint( jet_engine()->listings->data->get_meta( $field ) );
+					$res += Jet_Engine_Calculated_Callback_Addon::prepare_value( jet_engine()->listings->data->get_meta( $field ) );
 				}
 
 				return $res;
@@ -142,11 +179,11 @@ class Jet_Engine_Calculated_Callback_Addon {
 					return 'Please set additional fields names to calculate';
 				}
 
-				$res    = absint( $field_value );
+				$res    = Jet_Engine_Calculated_Callback_Addon::prepare_value( $field_value );
 				$fields = explode( ',', str_replace( ' ', '', $fields ) );
 
 				foreach ( $fields as $field ) {
-					$res = $res - absint( jet_engine()->listings->data->get_meta( $field ) );
+					$res = $res - Jet_Engine_Calculated_Callback_Addon::prepare_value( jet_engine()->listings->data->get_meta( $field ) );
 				}
 
 				return $res;
@@ -158,11 +195,37 @@ class Jet_Engine_Calculated_Callback_Addon {
 					return 'Please set additional fields names to calculate';
 				}
 
-				$res    = absint( $field_value );
+				$res    = Jet_Engine_Calculated_Callback_Addon::prepare_value( $field_value );
 				$fields = explode( ',', str_replace( ' ', '', $fields ) );
 
 				foreach ( $fields as $field ) {
-					$res = $res * absint( jet_engine()->listings->data->get_meta( $field ) );
+					$res = $res * Jet_Engine_Calculated_Callback_Addon::prepare_value( jet_engine()->listings->data->get_meta( $field ) );
+				}
+
+				return $res;
+
+			},
+			'divide_fields' => function( $field_value, $fields ) {
+
+				if ( empty( $fields ) ) {
+					return 'Please set additional fields names to calculate';
+				}
+
+				$res    = Jet_Engine_Calculated_Callback_Addon::prepare_value( $field_value );
+				$fields = explode( ',', str_replace( ' ', '', $fields ) );
+
+				foreach ( $fields as $field ) {
+
+					$div = Jet_Engine_Calculated_Callback_Addon::prepare_value( jet_engine()->listings->data->get_meta( $field ) );
+
+					if ( ! $div ) {
+
+						throw new Exception( 'Division by 0' );
+
+					}
+
+					$res = $res / $div;
+
 				}
 
 				return $res;
@@ -176,6 +239,9 @@ class Jet_Engine_Calculated_Callback_Addon {
 		if ( 'jet_engine_calculated_field' === $callback ) {
 			$args[] = isset( $settings['jet_calc_cbs'] ) ? $settings['jet_calc_cbs'] : false;
 			$args[] = isset( $settings['jet_calc_cb_args'] ) ? $settings['jet_calc_cb_args'] : false;
+			$args[] = isset( $settings['jet_calc_cb_dec'] ) ? $settings['jet_calc_cb_dec'] : 0;
+			$args[] = isset( $settings['jet_calc_cb_dec_sep'] ) ? $settings['jet_calc_cb_dec_sep'] : '.';
+			$args[] = isset( $settings['jet_calc_cb_th_sep'] ) ? $settings['jet_calc_cb_th_sep'] : ',';
 		}
 
 		return $args;
@@ -204,10 +270,40 @@ class Jet_Engine_Calculated_Callback_Addon {
 
 	}
 
+	public static function prepare_value( $value ) {
+
+		if ( ! is_numeric( $value ) ) {
+
+			$value = 0;
+			
+		}
+
+		return $value;
+
+	}
+
 }
 
 Jet_Engine_Calculated_Callback_Addon::instance();
 
-function jet_engine_calculated_field( $field_value = null, $calc_key = null, $args = null ) {
-	return Jet_Engine_Calculated_Callback_Addon::instance()->calculated_field( $field_value, $calc_key, $args );
+function jet_engine_calculated_field( $field_value = null, $calc_key = null, $args = null, $dec = 0, $dec_sep = '.', $th_sep = ',' ) {
+	
+	try {
+
+		$result = Jet_Engine_Calculated_Callback_Addon::instance()->calculated_field( $field_value, $calc_key, $args );
+
+	} catch( Exception $e ) {
+
+		return $e->getMessage();
+
+	}
+
+	if ( is_numeric( $result ) ) {
+
+		$result = number_format( $result, $dec, $dec_sep, $th_sep );
+
+	}
+
+	return $result;
+
 }
