@@ -146,15 +146,27 @@ class Jet_Engine_Calculated_Callback_Addon {
 	public function get_config() {
 		return apply_filters( 'jet-engine-calculated-callback/config', array(
 			'increase_value_by_percentage' => function( $field_value, $percent = 0 ) {
+
+				$field_value = Jet_Engine_Calculated_Callback_Addon::prepare_value( $field_value );
+
 				if ( ! $percent ) {
 					return 'Please set percentage value to calculate';
 				}
+
+				$percent = Jet_Engine_Calculated_Callback_Addon::prepare_value( $percent );
+
 				return $field_value + $field_value * $percent / 100;
 			},
 			'decrease_value_by_percentage' => function( $field_value, $percent = 0 ) {
+				
+				$field_value = Jet_Engine_Calculated_Callback_Addon::prepare_value( $field_value );
+
 				if ( ! $percent ) {
 					return 'Please set percentage value to calculate';
 				}
+
+				$percent = Jet_Engine_Calculated_Callback_Addon::prepare_value( $percent );
+
 				return $field_value - $field_value * $percent / 100;
 			},
 			'sum_fields' => function( $field_value, $fields ) {
